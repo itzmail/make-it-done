@@ -1,259 +1,208 @@
-# makeitdone — Token-Optimized Skill Orchestration Framework
+# make-it-done
 
-A lightweight, token-efficient project orchestration framework for Claude Code. Build and execute projects in phases using wave-based parallelization with built-in token optimization (~40% savings via TOON).
+Token-optimized orchestration framework for Claude Code projects.
 
-## Features
+[![Node.js >= 18](https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![npm](https://img.shields.io/npm/v/make-it-done?logo=npm&logoColor=white)](https://www.npmjs.com/package/make-it-done)
+[![Version](https://img.shields.io/badge/version-0.1.0-1f6feb)](./package.json)
+![License: MIT](https://img.shields.io/badge/license-MIT-2ea44f)
 
-- **Phase-based execution**: Organize work into discrete, milestoned phases
-- **Wave parallelization**: Run independent tasks in parallel within phases
-- **Token optimized**: All JSON payloads → TOON (40% token reduction)
-- **Quality gates**: Automated verification against acceptance criteria
-- **Model routing**: Haiku/Sonnet/Opus selection based on task complexity
-- **Context awareness**: Graceful degradation when context window is low
-- **Lean agents**: 5 consolidated agents vs 21 in GSD v1 (76% fewer definitions)
-- **Selective injection**: Workflows only load step fragments they need
+`make-it-done` helps you run projects in structured phases, break work into wave-sized chunks, and keep orchestration token usage low with TOON-based payloads.
+
+## Table of Contents
+
+- [Why makeitdone](#why-makeitdone)
+- [Core Workflow](#core-workflow)
+- [Architecture](#architecture)
+- [Install](#install)
+- [Quick Start](#quick-start)
+- [Commands](#commands)
+- [Project Structure](#project-structure)
+- [Token Optimization](#token-optimization)
+- [Configuration](#configuration)
+- [Troubleshooting](#troubleshooting)
+- [Development](#development)
+- [Roadmap](#roadmap)
+- [License](#license)
+
+## Why makeitdone
+
+- Phase-based planning: keep scope explicit and milestone-driven.
+- Wave execution: group independent tasks for efficient parallel-style progress.
+- Lean orchestration: 5 focused agents and selective step injection.
+- Built-in quality gates: verify progress before phase transitions.
+- TOON-native payloads: lower token overhead versus verbose JSON flows.
+
+## Core Workflow
+
+```mermaid
+flowchart LR
+  A[/mid:init/] --> B[Create .planning files]
+  B --> C[/mid:plan --mode roadmap/]
+  C --> D[/mid:plan --mode phase --phase N/]
+  D --> E[/mid:do N/]
+  E --> F[/mid:verify --phase N --mode audit/]
+  F --> G[/mid:next/]
+```
+
+## Architecture
+
+```mermaid
+flowchart TD
+  U[User Commands] --> C[commands/mid/*.md]
+  C --> W[makeitdone/workflows/*.md]
+  W --> S[makeitdone/steps/*.md]
+  W --> A[agents/mid-*.md]
+  A --> T[mid-tools.cjs]
+  T --> P[.planning/*]
+```
+
+**Execution model**
+- Commands are thin stubs that delegate to workflows.
+- Workflows orchestrate state, model routing, and agent handoffs.
+- `mid-tools.cjs` handles TOON conversion and state/config/roadmap utilities.
+- `.planning/STATE.md` is the single execution truth for phase/wave progress.
+
+## Install
+
+### From npm
+
+```bash
+npm install -g make-it-done
+# or
+bun add -g make-it-done
+
+# Then run installer
+makeitdone              # install to ~/.claude (global)
+makeitdone --local     # install to ./.claude (project-local)
+```
+
+### From source (development)
+
+```bash
+git clone https://github.com/itzmail/make-it-done.git
+cd make-it-done
+npm install
+node bin/install.js --global
+```
+
+### Update or uninstall
+
+```bash
+makeitdone --update --global
+makeitdone --uninstall --global
+```
 
 ## Quick Start
 
-### 1. Install
+1) Initialize project context:
 
 ```bash
-# Global installation
-node bin/install.js --global
-
-# Local project installation
-node bin/install.js --local
-```
-
-Installs to:
-- `~/.claude/commands/mid/` — 10 command stubs
-- `~/.claude/agents/` — 5 agent definitions
-- `~/.claude/makeitdone/` — framework files + mid-tools utility
-
-### 2. Initialize a Project
-
-```
 /mid:init
 ```
 
-Answers 5 questions:
-- Project name
-- Description
-- Team size
-- Timeline estimate
-- Tech stack
+2) Generate roadmap:
 
-Creates `.planning/` directory with:
-- `PROJECT.md` — project spec
-- `REQUIREMENTS.md` — functional/non-functional requirements
-- `ROADMAP.md` — phase breakdown
-- `STATE.md` — execution state (< 100 lines always)
-- `config.json` — model profile, context window
-
-### 3. Create Roadmap
-
-```
+```bash
 /mid:plan --mode roadmap
 ```
 
-Uses mid-planner agent to generate `ROADMAP.md` from PROJECT.md + REQUIREMENTS.md.
+3) Plan first phase:
 
-### 4. Plan First Phase
-
-```
+```bash
 /mid:plan --mode phase --phase 1
 ```
 
-Creates `.planning/phases/01-name/PLAN.md` with:
-- Tasks broken into waves (parallelizable chunks)
-- Acceptance criteria
-- Estimated hours
+4) Execute phase:
 
-### 5. Execute Phase
-
-```
+```bash
 /mid:do 1
 ```
 
-Spawns mid-executor agent to:
-- Execute each wave of tasks
-- Call mid-verifier for per-task validation
-- Update `.planning/STATE.md` atomically
-- Handle blockers and failures
+5) Verify and move next:
 
-### 6. Verify & Move Forward
-
-```
+```bash
 /mid:verify --phase 1 --mode audit
 /mid:next
 ```
 
-Verify against acceptance criteria, then transition to next phase.
+6) Check progress anytime:
+
+```bash
+/mid:status
+```
 
 ## Commands
 
 | Command | Purpose |
-|---------|---------|
-| `/mid:init` | Initialize new makeitdone project |
-| `/mid:plan` | Create/update roadmaps and phase plans |
-| `/mid:do` | Execute phase with wave-based parallelization |
-| `/mid:next` | Move to next phase (after verification) |
-| `/mid:verify` | Quality gates (integration, security, UI, audit modes) |
-| `/mid:status` | Show project status and progress |
-| `/mid:report` | Generate comprehensive project report |
-| `/mid:debug` | Diagnose phase execution issues |
-| `/mid:quick` | Quick task execution (ad-hoc work) |
+|---|---|
+| `/mid:init` | Initialize a new makeitdone project |
+| `/mid:plan` | Create/update roadmap and phase plans |
+| `/mid:do` | Execute phase plans using wave workflow |
+| `/mid:verify` | Run quality checks (integration/security/ui/audit) |
+| `/mid:next` | Advance to next phase after successful verification |
+| `/mid:status` | Show current project status |
+| `/mid:report` | Generate project report |
+| `/mid:debug` | Diagnose execution blockers/failures |
+| `/mid:quick` | Ad-hoc execution without full phase ceremony |
 | `/mid:help` | Command reference |
 
-## Architecture
+## Project Structure
 
-### Commands (thin stubs, ~300 bytes)
+After `/mid:init`, your project gets a planning workspace:
 
-```markdown
----
-name: mid:do
-description: Execute phase plans
-allowed-tools: Read, Write, Edit, Bash, Grep, Glob, Task, Agent
----
-
-@~/.claude/makeitdone/workflows/execute.md
-```
-
-Commands are thin delegators that reference workflows via `@path` context injection.
-
-### Agents (5 consolidated)
-
-| Agent | Purpose | Model |
-|-------|---------|-------|
-| **mid-executor** | Wave execution, task coordination | sonnet/haiku (routed) |
-| **mid-planner** | Roadmaps, phase plans, gap closure | sonnet/haiku |
-| **mid-researcher** | Codebase/project context analysis | haiku (lazy-loaded) |
-| **mid-verifier** | Quality gates (integration, security, UI) | haiku (read-only) |
-| **mid-debugger** | Root cause analysis, unblocking | sonnet |
-
-### Workflows (9 orchestration files)
-
-- **init.md** — Project initialization with template population
-- **plan.md** — Roadmap and phase plan creation (with optional research gate)
-- **execute.md** — Wave-based execution with atomic state updates
-- **verify.md** — Quality gates and acceptance criteria validation
-- **next.md** — Phase transition and state advancement
-- **status.md** — Real-time project status (text/JSON/TOON formats)
-- **report.md** — Comprehensive project report generation
-- **debug.md** — Issue diagnosis and unblocking
-- **quick.md** — Ad-hoc task execution without full phase structure
-
-### Step Fragments (6 reusable patterns)
-
-- **init-gate.md** — Initialization payload pattern (fresh context per run)
-- **state-read.md** — State.md reading with context window guard
-- **model-route.md** — Model selection based on profile + context
-- **context-budget.md** — Budget guidelines for all workflows
-- **agent-contracts.md** — Agent completion markers (strict contracts)
-- **anti-patterns.md** — 15+ patterns to avoid (universal constraints)
-
-### Templates (6 project files)
-
-- **project.md** — Vision, goals, scope, constraints
-- **requirements.md** — User stories, features, acceptance criteria
-- **roadmap.md** — Phase breakdown with milestones
-- **state.md** — Execution state frontmatter (< 100 lines)
-- **plan.md** — Task decomposition into waves (< 150 lines)
-- **summary.md** — Phase completion summary (< 80 lines)
-
-## Token Optimization (Built-in)
-
-### 1. TOON Native Output
-All mid-tools outputs use TOON (Token-Oriented Object Notation):
-```bash
-mid-tools init execute 1        # Returns TOON (not JSON)
-mid-tools state get             # Returns TOON (not JSON)
-```
-
-**Savings**: ~40% fewer tokens per JSON payload
-
-### 2. Selective Step Injection
-
-Workflows only `@include` steps they need:
-```markdown
-# Good (surgical)
-@~/.claude/makeitdone/steps/init-gate.md
-@~/.claude/makeitdone/steps/model-route.md
-
-# Bad (monolithic)
-@~/.claude/makeitdone/steps/*.md
-```
-
-### 3. Frontmatter-First Reads
-
-When context < 500k tokens, read only frontmatter:
-```bash
-# Saves 5K+ tokens vs full STATE.md
-mid-tools fm get .planning/STATE.md
-```
-
-### 4. Lazy Research Gate
-
-mid-researcher only spawned with `--research` flag:
-```bash
-/mid:plan --mode phase --phase 1           # No research
-/mid:plan --mode phase --phase 1 --research # With research
-```
-
-### 5. Model Routing
-
-Select models by profile + context:
-```json
-{
-  "model_profile": "balanced",     // Use Sonnet for execution
-  "context_window": 500000
-}
-```
-
-### 6. Agent Consolidation
-
-5 agents replace 21 from GSD v1:
-- 76% fewer agent definitions to load
-- Fewer file reads, lower token overhead
-- Focused responsibilities per agent
-
-### 7. Context Tier System
-
-Workflows degrade gracefully:
-
-| Context | Tier | Behavior |
-|---------|------|----------|
-| < 300k | POOR | Read-only, no agents |
-| 300-500k | DEGRADING | Haiku only, frontmatter reads |
-| 500k-1M | GOOD | Normal operation |
-| > 1M | PEAK | All features enabled |
-
-## Project File Structure
-
-After `/mid:init`:
-
-```
+```text
 project-root/
-├── CLAUDE.md              # Project-specific directives
 ├── .planning/
-│   ├── PROJECT.md         # Vision & goals
-│   ├── REQUIREMENTS.md    # Features & acceptance criteria
-│   ├── ROADMAP.md         # Phase breakdown
-│   ├── STATE.md           # Execution state (< 100 lines)
-│   ├── config.json        # Model profile, context window
+│   ├── PROJECT.md
+│   ├── REQUIREMENTS.md
+│   ├── ROADMAP.md
+│   ├── STATE.md
+│   ├── config.json
 │   └── phases/
-│       ├── 01-foundation/
-│       │   ├── PLAN.md         # Wave task list
-│       │   ├── SUMMARY.md      # Completion results
-│       │   └── research.md     # Optional research findings
-│       ├── 02-core-features/
-│       └── ...
-└── (project code here)
+│       ├── 01/
+│       ├── 02/
+│       └── 03/
+└── (your application code)
 ```
+
+Core templates shipped with framework:
+- `makeitdone/templates/project.md`
+- `makeitdone/templates/requirements.md`
+- `makeitdone/templates/roadmap.md`
+- `makeitdone/templates/state.md`
+- `makeitdone/templates/plan.md`
+- `makeitdone/templates/summary.md`
+
+## Token Optimization
+
+### 1) TOON-native utilities
+
+```bash
+node ~/.claude/makeitdone/bin/mid-tools.cjs init execute 1
+node ~/.claude/makeitdone/bin/mid-tools.cjs state get
+```
+
+### 2) Selective step injection
+
+Workflows include only the fragments they need instead of loading every step file.
+
+### 3) Context-aware degradation
+
+| Context window | Tier | Behavior |
+|---|---|---|
+| `< 300k` | POOR | read-only fallback, limited actions |
+| `300k-500k` | DEGRADING | favor small reads + lightweight models |
+| `500k-1M` | GOOD | standard operation |
+| `> 1M` | PEAK | full capability |
+
+### 4) Lean agent set
+
+5 consolidated agents replace larger multi-agent layouts from older versions.
 
 ## Configuration
 
-`.planning/config.json`:
+Project-level config lives at `.planning/config.json`:
 
 ```json
 {
@@ -266,129 +215,49 @@ project-root/
 }
 ```
 
-### Model Profiles
+Model profiles:
+- `budget`: prioritize lower token cost
+- `balanced`: quality/cost default
+- `quality`: prefer stronger generation models
 
-- **budget**: Haiku for all work (token-constrained)
-- **balanced**: Sonnet for executor, Haiku for verifier (default)
-- **quality**: Opus for executor, Sonnet for verifier (complex design)
+## Troubleshooting
 
-## Utilities
+- **Missing `.planning` files**: run `/mid:init` first, then `/mid:plan --mode roadmap`.
+- **Phase not found**: confirm phase directory exists under `.planning/phases/`.
+- **State drift**: use `mid-tools state get` to inspect current phase/wave truth.
+- **Low context behavior**: reduce large reads and run focused commands (`status`, then `plan/do`).
+- **Node runtime issues**: use Node.js 18+.
 
-### mid-tools.cjs (63KB bundled)
+## Development
 
-TOON conversion + project utilities:
-
-```bash
-# JSON ↔ TOON conversion
-node ~/.claude/makeitdone/bin/mid-tools.cjs toon file.json
-echo '{}' | node ~/.claude/makeitdone/bin/mid-tools.cjs toon -
-
-# Workflow init payload (returns TOON)
-node ~/.claude/makeitdone/bin/mid-tools.cjs init execute 1
-
-# State operations
-node ~/.claude/makeitdone/bin/mid-tools.cjs state get           # Read as TOON
-node ~/.claude/makeitdone/bin/mid-tools.cjs state set phase 2   # Atomic update
-node ~/.claude/makeitdone/bin/mid-tools.cjs state advance 2     # Phase complete
-
-# Frontmatter extraction
-node ~/.claude/makeitdone/bin/mid-tools.cjs fm get .planning/STATE.md
-
-# Roadmap queries
-node ~/.claude/makeitdone/bin/mid-tools.cjs roadmap phases
-node ~/.claude/makeitdone/bin/mid-tools.cjs roadmap current
-
-# Config management
-node ~/.claude/makeitdone/bin/mid-tools.cjs config get context_window
-node ~/.claude/makeitdone/bin/mid-tools.cjs config set model_profile balanced
-```
-
-## Examples
-
-### Example: Simple 2-Phase Project
+Build bundled utility:
 
 ```bash
-# 1. Init
-/mid:init
-> Project name: "My API"
-> Description: "REST API for todo app"
-> Timeline: 2 weeks
-> Tech: Node.js + Express + PostgreSQL
-
-# 2. Plan roadmap
-/mid:plan --mode roadmap
-# Creates ROADMAP.md with 2 phases
-
-# 3. Plan phase 1
-/mid:plan --mode phase --phase 1
-# Creates PLAN.md with setup tasks, auth, database
-
-# 4. Execute phase 1
-/mid:do 1
-# Executor runs Wave 1 (setup, db schema, auth)
-# Verifier checks per-task completion
-# Updates STATE.md atomically
-
-# 5. Check status
-/mid:status
-# Phase: 1/2
-# Wave: 1/2
-# Time: 4h 23m
-
-# 6. Move to phase 2
-/mid:verify --phase 1 --mode audit
-/mid:next
-
-# 7. Execute phase 2
-/mid:do 2
-# Executor runs core features (API endpoints)
-
-# 8. Final report
-/mid:report
-# Generates REPORT_*.md with metrics
+node build.js
 ```
 
-## Best Practices
+Watch mode:
 
-1. **Keep STATE.md < 100 lines** — Use mid-tools for updates
-2. **Keep PLAN.md < 150 lines** — Split into waves, not mega-plans
-3. **Task estimation** — Break into 30-90 minute chunks
-4. **Waves** — Max 10 tasks per wave for parallelization
-5. **Acceptance criteria** — Be explicit (tests, coverage, security)
-6. **Context awareness** — Check `/mid:status` before resource-heavy operations
-7. **Research gate** — Only use `--research` if actually needed
+```bash
+node build.js --watch
+```
 
-## Limitations & Known Issues
+Package metadata and release notes:
+- `package.json`
+- `CHANGELOG.md`
 
-- Framework assumes Claude Code environment (RTK for shell output compression)
-- Parallelization within waves is logical (not actual parallel execution)
-- mid-tools requires Node.js 18+ and @toon-format/toon package
-- Large codebases (> 10k files) may need mid-researcher with custom grep patterns
+## Roadmap
 
-## References
-
-- **GSD v1**: Inspiration for phase-based execution, quality gates, agent patterns
-- **TOON**: Token-Oriented Object Notation for ~40% token compression
-- **RTK**: Rust Token Killer for shell output compression (separate CLI)
-
-## Contributing
-
-This is a Claude Code skill framework. Improvements welcome:
-- Optimize step fragments for lower token overhead
-- Add new workflow patterns
-- Extend agent capabilities
-- Improve TOON encoding strategies
+Planned next improvements:
+- CI integrations and workflow automation hooks
+- richer notifications
+- broader compatibility beyond current runtime assumptions
+- expanded test coverage and benchmarks
 
 ## License
 
-MIT — Use freely in your Claude Code projects.
+MIT
 
 ---
 
-**Token Savings Example**:
-- Typical project: 5 phases, 40 tasks, 2 weeks runtime
-- With makeitdone: ~150K tokens (with TOON + selective injection)
-- Without optimization: ~250K tokens (full JSON, all steps loaded)
-- **Savings**: ~40% of orchestration overhead
-
-*Built with token optimization as the primary design constraint.*
+Built for structured execution with token discipline as a first-class constraint.

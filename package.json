@@ -1,17 +1,14 @@
 {
-  "name": "makeitdone-cc",
+  "name": "make-it-done",
   "version": "0.1.0",
   "description": "Token-optimized skill orchestration framework for Claude Code",
   "type": "module",
-  "main": "./dist/index.js",
   "bin": {
-    "makeitdone": "./bin/install.js"
+    "makeitdone": "bin/install.js",
+    "mid": "bin/install.js"
   },
   "scripts": {
-    "build": "node build.js",
-    "build:watch": "node build.js --watch",
-    "test": "node --test 'src/**/*.test.ts' --require ts-node/cjs",
-    "dev": "tsx src/index.ts"
+    "prepublishOnly": "node -e \"import('fs').then(fs => fs.chmodSync('bin/install.js', '755'))\""
   },
   "keywords": [
     "claude",
@@ -39,14 +36,15 @@
     "makeitdone/",
     "commands/",
     "agents/",
-    "README.md"
+    "README.md",
+    "package.json"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/itzmail/makeitdone"
+    "url": "git+https://github.com/itzmail/make-it-done.git"
   },
-  "homepage": "https://github.com/itzmail/makeitdone#readme",
+  "homepage": "https://github.com/itzmail/make-it-done#readme",
   "bugs": {
-    "url": "https://github.com/itzmail/makeitdone/issues"
+    "url": "https://github.com/itzmail/make-it-done/issues"
   }
 }

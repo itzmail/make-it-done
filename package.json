@@ -1,0 +1,52 @@
+{
+  "name": "makeitdone-cc",
+  "version": "0.1.0",
+  "description": "Token-optimized skill orchestration framework for Claude Code",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "makeitdone": "./bin/install.js"
+  },
+  "scripts": {
+    "build": "node build.js",
+    "build:watch": "node build.js --watch",
+    "test": "node --test 'src/**/*.test.ts' --require ts-node/cjs",
+    "dev": "tsx src/index.ts"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "orchestration",
+    "toon",
+    "token-optimization",
+    "spec-driven"
+  ],
+  "author": "Ismail Alam",
+  "license": "MIT",
+  "dependencies": {
+    "@toon-format/toon": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "esbuild": "^0.19.10",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "bin/",
+    "makeitdone/",
+    "commands/",
+    "agents/",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/itzmail/makeitdone"
+  },
+  "homepage": "https://github.com/itzmail/makeitdone#readme",
+  "bugs": {
+    "url": "https://github.com/itzmail/makeitdone/issues"
+  }
+}

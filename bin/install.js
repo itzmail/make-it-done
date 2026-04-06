@@ -479,7 +479,10 @@ function install(runtime, location) {
 
     const sourceDir = resolve(__dirname, '..')
     const targetMakeitdoneDir = resolve(baseDir, 'makeitdone')
-    const targetCommandsDir = resolve(baseDir, 'commands', 'mid')
+    // For OpenCode: commands go directly to commands/ (flattened), for Claude: commands/mid/
+    const targetCommandsDir = runtime === 'opencode'
+      ? resolve(baseDir, 'commands')
+      : resolve(baseDir, 'commands', 'mid')
     const targetAgentsDir = resolve(baseDir, 'agents')
 
     // Copy makeitdone framework directory (no conversion needed)
@@ -498,7 +501,8 @@ function install(runtime, location) {
         targetCommandsDir,
         runtime,
         false, // isAgent
-        baseDir
+        baseDir,
+        runtime === 'opencode' ? 'mid-' : null // prefix for OpenCode flattening
       )
       console.log(`✅ Installed commands to ${targetCommandsDir}`)
     }
@@ -555,13 +559,23 @@ function install(runtime, location) {
  * @param {string} runtime - Target runtime
  * @param {boolean} isAgent - Whether these are agent files
  * @param {string} baseDir - Base config directory
+ * @param {string} filePrefix - Optional prefix for filenames (e.g. 'mid-' for OpenCode commands)
  */
-function installFilesWithConversion(sourceDir, targetDir, runtime, isAgent, baseDir) {
+function installFilesWithConversion(sourceDir, targetDir, runtime, isAgent, baseDir, filePrefix = null) {
   const files = readDirRecursive(sourceDir)
 
   for (const file of files) {
     const sourcePath = resolve(sourceDir, file)
-    const targetPath = resolve(targetDir, file)
+    // For OpenCode commands: add mid- prefix (init.md → mid-init.md)
+    let targetFileName = file
+    if (filePrefix) {
+      // Remove directory path separators and add prefix
+      targetFileName = file.replace(/\//g, '-')
+      if (!targetFileName.startsWith(filePrefix)) {
+        targetFileName = filePrefix + targetFileName
+      }
+    }
+    const targetPath = resolve(targetDir, targetFileName)
 
     // Ensure target directory exists
     mkdirSync(dirname(targetPath), { recursive: true })
@@ -627,9 +641,24 @@ function readDirRecursive(dir) {
 function uninstall(runtime, location) {
   const baseDir = getConfigPath(runtime, location)
 
+  // For OpenCode: remove individual flattened command files (mid-init.md, mid-plan.md, etc)
+  if (runtime === 'opencode') {
+    const commandsDir = resolve(baseDir, 'commands')
+    if (existsSync(commandsDir)) {
+      const files = readdirSync(commandsDir)
+      for (const file of files) {
+        if (file.startsWith('mid-') && file.endsWith('.md')) {
+          const filePath = resolve(commandsDir, file)
+          rmSync(filePath, { force: true })
+          console.log(`✅ Removed ${filePath}`)
+        }
+      }
+    }
+  }
+
   const dirs = [
     resolve(baseDir, 'makeitdone'),
-    resolve(baseDir, 'commands', 'mid'),
+    resolve(baseDir, 'commands', 'mid'),  // Claude Code: commands in mid/ folder
     resolve(baseDir, 'agents')
   ]
 

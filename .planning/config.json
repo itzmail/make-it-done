@@ -1,0 +1,9 @@
+{
+  "project_name": "makeitdone-opencode",
+  "description": "Adapt makeitdone framework untuk AI coding agent OpenCode",
+  "model_profile": "balanced",
+  "context_window": 200000,
+  "team_size": 1,
+  "created": "2026-04-06",
+  "tech_stack": "TypeScript/Node.js, esbuild, TOON library"
+}

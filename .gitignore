@@ -1,1 +1,35 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build & dist
+dist/
+*.tgz
+
+# Environment & Config
+.env
+.env.local
+.env.*.local
+
+# Project-internal state & planning
+.planning/
+.opencode/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reference materials (project-specific)
 reference/
+
+# Test artifacts
+*.spec.js
+*.test.js
+coverage/

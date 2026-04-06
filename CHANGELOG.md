@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-04-06
+
+### Added
+
+- OpenCode-focused documentation in `OPENCODE.md`:
+  - install/update/uninstall usage for `--opencode`, `--both`, `--global`, `--local`, `--update`, `--uninstall`
+  - OpenCode vs Claude command mapping (`/mid-*` vs `/mid:*`)
+  - multi-runtime coexistence guide with path and command checks
+  - release verification checklist
+  - recovery and rollback playbook for state corruption and partial install/update scenarios
+
+### Changed
+
+- Workflow docs aligned with concrete phase plan layout (`.planning/phases/NN/NN-PLAN.md` and `*-PLAN.md` discovery).
+- Error messages across execution workflows now include explicit next actions for missing phase/plan and malformed state scenarios.
+
+### Fixed
+
+- `execute` workflow wave heading parsing now supports actual heading style used in phase plans.
+- `debug` workflow phase directory path no longer uses stale wildcard suffix pattern.
+
+### Known Limitations
+
+- OpenCode `settings.json` JSONC comments are stripped during installer update/write operations.
+- For local development validation, prefer `node bin/install.js ...` to avoid PATH resolving a stale `makeitdone` binary.
+
 ## [0.1.0] - 2026-04-05
 
 ### Added
@@ -119,4 +145,5 @@ Total: 43 framework files
 
 ---
 
+[0.2.0]: https://github.com/itzmail/makeitdone/releases/tag/v0.2.0
 [0.1.0]: https://github.com/itzmail/makeitdone/releases/tag/v0.1.0

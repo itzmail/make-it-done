@@ -296,6 +296,15 @@ function convertAllowedToolsToTools(tools) {
 }
 
 /**
+ * Escape a string for use in a RegExp
+ * @param {string} value - Raw string
+ * @returns {string}
+ */
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
  * Convert content for a specific runtime
  * @param {string} content - File content
  * @param {string} runtime - Target runtime
@@ -303,7 +312,7 @@ function convertAllowedToolsToTools(tools) {
  * @returns {string}
  */
 function convertForRuntime(content, runtime, options = {}) {
-  const { isAgent = false, pathPrefix = '~/.config/opencode' } = options
+  const { isAgent = false, pathPrefix = '~/.config/opencode', sourceRoot = null } = options
 
   if (runtime === 'claude') {
     // No conversion needed for Claude Code
@@ -311,7 +320,7 @@ function convertForRuntime(content, runtime, options = {}) {
   }
 
   if (runtime === 'opencode') {
-    return convertToOpenCode(content, isAgent, pathPrefix)
+    return convertToOpenCode(content, isAgent, pathPrefix, sourceRoot)
   }
 
   return content
@@ -324,7 +333,7 @@ function convertForRuntime(content, runtime, options = {}) {
  * @param {string} pathPrefix - Path prefix for permission paths
  * @returns {string}
  */
-function convertToOpenCode(content, isAgent = false, pathPrefix = '~/.config/opencode') {
+function convertToOpenCode(content, isAgent = false, pathPrefix = '~/.config/opencode', sourceRoot = null) {
   const { frontmatter, body } = parseFrontmatter(content)
 
   let converted = body
@@ -335,7 +344,43 @@ function convertToOpenCode(content, isAgent = false, pathPrefix = '~/.config/ope
 
   // 2. Replace paths
   converted = converted.replace(/~\/\.claude\b/g, pathPrefix)
-  converted = converted.replace(/\$HOME\/\.claude\b/g, `$HOME${pathPrefix.substring(1)}`)
+  const homePathPrefix = pathPrefix.startsWith('~') ? `$HOME${pathPrefix.substring(1)}` : pathPrefix
+  converted = converted.replace(/\$HOME\/\.claude\b/g, homePathPrefix)
+
+  // 2a. Normalize repo-local @ references to OpenCode install paths
+  if (sourceRoot) {
+    const normalizedSourceRoot = sourceRoot.replace(/\\/g, '/')
+    const escapedSourceRoot = escapeRegExp(normalizedSourceRoot)
+    converted = converted.replace(
+      new RegExp(`@${escapedSourceRoot}/makeitdone/makeitdone/`, 'g'),
+      `@${pathPrefix}/makeitdone/`
+    )
+    converted = converted.replace(
+      new RegExp(`@${escapedSourceRoot}/makeitdone/`, 'g'),
+      `@${pathPrefix}/makeitdone/`
+    )
+    converted = converted.replace(
+      new RegExp(`@${escapedSourceRoot}/workflows/`, 'g'),
+      `@${pathPrefix}/makeitdone/workflows/`
+    )
+    converted = converted.replace(
+      new RegExp(`@${escapedSourceRoot}/steps/`, 'g'),
+      `@${pathPrefix}/makeitdone/steps/`
+    )
+  }
+
+  // 2b. Harden mid-tools invocation with absolute node path + fallback
+  const escapedPathPrefix = escapeRegExp(pathPrefix)
+  const midToolsPath = `${pathPrefix}/makeitdone/bin/mid-tools.cjs`
+  const midToolsRegex = new RegExp(`\\bnode\\s+${escapedPathPrefix}/makeitdone/bin/mid-tools\\.cjs\\b`, 'g')
+  const nodeBin = '$(command -v node 2>/dev/null || echo node)'
+  converted = converted.replace(
+    midToolsRegex,
+    `${nodeBin} ${midToolsPath}`
+  )
+
+  const midToolsCommandRegex = /\bmid-tools\s+([a-zA-Z0-9_-]+)/g
+  converted = converted.replace(midToolsCommandRegex, `${nodeBin} ${midToolsPath} $1`)
 
   // 3. Replace tool name references in text
   for (const [claudeName, opencodeeName] of Object.entries(TOOL_NAME_MAP)) {
@@ -485,10 +530,23 @@ function install(runtime, location) {
       : resolve(baseDir, 'commands', 'mid')
     const targetAgentsDir = resolve(baseDir, 'agents')
 
-    // Copy makeitdone framework directory (no conversion needed)
+    // Copy makeitdone framework directory
     const makeitdoneSource = resolve(sourceDir, 'makeitdone')
     if (existsSync(makeitdoneSource)) {
-      cpSync(makeitdoneSource, targetMakeitdoneDir, { recursive: true, force: true })
+      if (runtime === 'opencode') {
+        mkdirSync(targetMakeitdoneDir, { recursive: true })
+        installFilesWithConversion(
+          makeitdoneSource,
+          targetMakeitdoneDir,
+          runtime,
+          false,
+          baseDir,
+          null,
+          sourceDir
+        )
+      } else {
+        cpSync(makeitdoneSource, targetMakeitdoneDir, { recursive: true, force: true })
+      }
       console.log(`✅ Installed makeitdone framework to ${targetMakeitdoneDir}`)
     }
 
@@ -502,7 +560,8 @@ function install(runtime, location) {
         runtime,
         false, // isAgent
         baseDir,
-        runtime === 'opencode' ? 'mid-' : null // prefix for OpenCode flattening
+        runtime === 'opencode' ? 'mid-' : null, // prefix for OpenCode flattening
+        sourceDir
       )
       console.log(`✅ Installed commands to ${targetCommandsDir}`)
     }
@@ -516,7 +575,9 @@ function install(runtime, location) {
         targetAgentsDir,
         runtime,
         true, // isAgent
-        baseDir
+        baseDir,
+        null,
+        sourceDir
       )
       console.log(`✅ Installed agents to ${targetAgentsDir}`)
     }
@@ -561,7 +622,7 @@ function install(runtime, location) {
  * @param {string} baseDir - Base config directory
  * @param {string} filePrefix - Optional prefix for filenames (e.g. 'mid-' for OpenCode commands)
  */
-function installFilesWithConversion(sourceDir, targetDir, runtime, isAgent, baseDir, filePrefix = null) {
+function installFilesWithConversion(sourceDir, targetDir, runtime, isAgent, baseDir, filePrefix = null, sourceRoot = null) {
   const files = readDirRecursive(sourceDir)
 
   for (const file of files) {
@@ -591,7 +652,8 @@ function installFilesWithConversion(sourceDir, targetDir, runtime, isAgent, base
 
       content = convertForRuntime(content, runtime, {
         isAgent,
-        pathPrefix
+        pathPrefix,
+        sourceRoot
       })
 
       writeFileSync(targetPath, content, 'utf-8')

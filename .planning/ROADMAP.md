@@ -9,11 +9,11 @@ description: Phase breakdown and timeline
 
 Total phases: 3
 Timeline: ~2 weeks
-Current phase: 1
+Current phase: 3
 
 ---
 
-## 01 - OpenCode Installer Implementation [in-progress]
+## 01 - OpenCode Installer Implementation [complete]
 
 **Goal**: Build OpenCode runtime detection + conversion logic dalam bin/install.js
 
@@ -31,11 +31,11 @@ Current phase: 1
 
 **Duration**: 1 week
 
-**Progress**: Wave 2 complete, Wave 3 in progress
+**Progress**: Complete
 
 ---
 
-## 02 - Testing & Validation [not-started]
+## 02 - Testing & Validation [complete]
 
 **Goal**: Test OpenCode installer dengan real OpenCode session, verify all features
 
@@ -52,9 +52,11 @@ Current phase: 1
 
 **Duration**: 4-5 days
 
+**Progress**: Complete
+
 ---
 
-## 03 - Documentation & Edge Cases [not-started]
+## 03 - Documentation & Edge Cases [complete]
 
 **Goal**: Dokumentasi OpenCode setup, handle edge cases, future runtime support
 
@@ -70,6 +72,8 @@ Current phase: 1
 
 **Duration**: 2-3 days
 
+**Progress**: Complete
+
 ---
 
 ## Notes
@@ -77,3 +81,9 @@ Current phase: 1
 - **Critical path**: Installer → Testing → Docs (2 weeks)
 - **Risk**: OpenCode SDK behavior changes atau undocumented features
 - **Mitigation**: Reference GSD installer code extensively, test early with real OpenCode
+
+## Learnings (Phase 2)
+
+- Command/file path resolution should not rely on wildcard phase directory assumptions; resolve concrete phase dir and discover `*-PLAN.md`.
+- OpenCode and Claude command naming differ (`/mid-*` vs `/mid:*`), and docs should be explicit.
+- OpenCode installer updates currently strip JSONC comments in `settings.json`; treat as known limitation.

@@ -315,7 +315,27 @@ function convertForRuntime(content, runtime, options = {}) {
   const { isAgent = false, pathPrefix = '~/.config/opencode', sourceRoot = null } = options
 
   if (runtime === 'claude') {
-    // No conversion needed for Claude Code
+    if (sourceRoot) {
+      const normalizedSourceRoot = sourceRoot.replace(/\\/g, '/')
+      const escapedSourceRoot = escapeRegExp(normalizedSourceRoot)
+      // Replace absolute source paths with installed ~/.claude paths
+      content = content.replace(
+        new RegExp(`@${escapedSourceRoot}/makeitdone/makeitdone/`, 'g'),
+        `@${pathPrefix}/makeitdone/`
+      )
+      content = content.replace(
+        new RegExp(`@${escapedSourceRoot}/makeitdone/`, 'g'),
+        `@${pathPrefix}/makeitdone/`
+      )
+      content = content.replace(
+        new RegExp(`@${escapedSourceRoot}/workflows/`, 'g'),
+        `@${pathPrefix}/makeitdone/workflows/`
+      )
+      content = content.replace(
+        new RegExp(`@${escapedSourceRoot}/steps/`, 'g'),
+        `@${pathPrefix}/makeitdone/steps/`
+      )
+    }
     return content
   }
 
@@ -646,9 +666,12 @@ function installFilesWithConversion(sourceDir, targetDir, runtime, isAgent, base
       let content = readFileSync(sourcePath, 'utf-8')
 
       // Convert content for target runtime
-      const pathPrefix = runtime === 'opencode' && baseDir === getConfigPath(runtime, 'global')
-        ? '~/.config/opencode'
-        : baseDir
+      let pathPrefix = baseDir
+      if (runtime === 'opencode' && baseDir === getConfigPath(runtime, 'global')) {
+        pathPrefix = '~/.config/opencode'
+      } else if (runtime === 'claude' && baseDir === getConfigPath(runtime, 'global')) {
+        pathPrefix = '~/.claude'
+      }
 
       content = convertForRuntime(content, runtime, {
         isAgent,

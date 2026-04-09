@@ -20,6 +20,7 @@ allowed-tools:
 | `/mid:status` | Show current project status |
 | `/mid:report` | Generate comprehensive project report |
 | `/mid:debug` | Debug phase execution issues |
+| `/mid:backlog` | Manage project backlog items |
 | `/mid:quick` | Quick task execution without full structure |
 | `/mid:help` | Show this help (you are here) |
 

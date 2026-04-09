@@ -4,7 +4,7 @@ Token-optimized orchestration framework for Claude Code projects.
 
 [![Node.js >= 18](https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![npm](https://img.shields.io/npm/v/make-it-done?logo=npm&logoColor=white)](https://www.npmjs.com/package/make-it-done)
-[![Version](https://img.shields.io/badge/version-0.1.0-1f6feb)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.2.1-1f6feb)](./package.json)
 ![License: MIT](https://img.shields.io/badge/license-MIT-2ea44f)
 
 `make-it-done` helps you run projects in structured phases, break work into wave-sized chunks, and keep orchestration token usage low with TOON-based payloads.
@@ -65,6 +65,24 @@ flowchart TD
 
 ## Install
 
+### Quick install (npx)
+
+No global install needed:
+
+```bash
+# Claude Code (global)
+npx make-it-done --claude --global
+
+# Claude Code (project-local)
+npx make-it-done --claude --local
+
+# OpenCode (global)
+npx make-it-done --opencode --global
+
+# OpenCode (project-local)
+npx make-it-done --opencode --local
+```
+
 ### From npm
 
 ```bash
@@ -73,8 +91,10 @@ npm install -g make-it-done
 bun add -g make-it-done
 
 # Then run installer
-makeitdone              # install to ~/.claude (global)
-makeitdone --local     # install to ./.claude (project-local)
+makeitdone --claude --global       # install for Claude Code (global)
+makeitdone --claude --local        # install for Claude Code (project-local)
+makeitdone --opencode --global     # install for OpenCode (global)
+makeitdone --opencode --local      # install for OpenCode (project-local)
 ```
 
 ### From source (development)
@@ -83,7 +103,7 @@ makeitdone --local     # install to ./.claude (project-local)
 git clone https://github.com/itzmail/make-it-done.git
 cd make-it-done
 npm install
-node bin/install.js --global
+node bin/install.js --claude --global
 ```
 
 ### Update or uninstall
@@ -144,6 +164,7 @@ makeitdone --uninstall --global
 | `/mid:status` | Show current project status |
 | `/mid:report` | Generate project report |
 | `/mid:debug` | Diagnose execution blockers/failures |
+| `/mid:backlog` | Manage project backlog items |
 | `/mid:quick` | Ad-hoc execution without full phase ceremony |
 | `/mid:help` | Command reference |
 

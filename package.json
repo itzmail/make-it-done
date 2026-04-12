@@ -1,6 +1,6 @@
 {
   "name": "make-it-done",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Token-optimized skill orchestration framework for Claude Code",
   "type": "module",
   "bin": {
